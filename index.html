@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaverse Shopping Center</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            z-index: 100;
+        }
+        #subscribeButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Metaverse Shopping Center</div>
+    <button id="subscribeButton">Subscribe</button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
+    <script>
+        let scene, camera, renderer, controls;
+        const stores = [
+            { name: "Store 1", image: "https://via.placeholder.com/200x200?text=Store+1", url: "https://example.com/store1" },
+            { name: "Store 2", image: "https://via.placeholder.com/200x200?text=Store+2", url: "https://example.com/store2" },
+            { name: "Store 3", image: "https://via.placeholder.com/200x200?text=Store+3", url: "https://example.com/store3" },
+            { name: "Store 4", image: "https://via.placeholder.com/200x200?text=Store+4", url: "https://example.com/store4" },
+            { name: "Store 5", image: "https://via.placeholder.com/200x200?text=Store+5", url: "https://example.com/store5" },
+            { name: "Store 6", image: "https://via.placeholder.com/200x200?text=Store+6", url: "https://example.com/store6" },
+            { name: "Store 7", image: "https://via.placeholder.com/200x200?text=Store+7", url: "https://example.com/store7" },
+            { name: "Store 8", image: "https://via.placeholder.com/200x200?text=Store+8", url: "https://example.com/store8" },
+            { name: "Store 9", image: "https://via.placeholder.com/200x200?text=Store+9", url: "https://example.com/store9" },
+            { name: "Store 10", image: "https://via.placeholder.com/200x200?text=Store+10", url: "https://example.com/store10" },
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            // Add directional light with shadows
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 200, 100);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // Create ground
+            const groundGeometry = new THREE.PlaneGeometry(200, 200);
+            const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x1a5f7a });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Create stores
+            stores.forEach((store, index) => {
+                createStore(store, index);
+            });
+
+            // Create giant screen
+            createGiantScreen();
+
+            // Set up camera and controls
+            camera.position.set(0, 30, 100);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            animate();
+        }
+
+        function createStore(store, index) {
+            const storeGroup = new THREE.Group();
+
+            // Create store building
+            const buildingGeometry = new THREE.BoxGeometry(8, 10, 8);
+            const buildingMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const buildingMesh = new THREE.Mesh(buildingGeometry, buildingMaterial);
+            buildingMesh.castShadow = true;
+            buildingMesh.receiveShadow = true;
+            storeGroup.add(buildingMesh);
+
+            // Create store sign
+            const texture = new THREE.TextureLoader().load(store.image);
+            const signGeometry = new THREE.PlaneGeometry(6, 2);
+            const signMaterial = new THREE.MeshStandardMaterial({ map: texture });
+            const signMesh = new THREE.Mesh(signGeometry, signMaterial);
+            signMesh.position.set(0, 6, 4.1);
+            signMesh.castShadow = true;
+            storeGroup.add(signMesh);
+
+            // Add store name
+            const loader = new THREE.FontLoader();
+            loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+                const textGeometry = new THREE.TextGeometry(store.name, {
+                    font: font,
+                    size: 0.5,
+                    height: 0.1,
+                });
+                const textMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+                const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                textMesh.position.set(-2, 7, 4.2);
+                storeGroup.add(textMesh);
+            });
+
+            // Position the store
+            const row = Math.floor(index / 5);
+            const col = index % 5;
+            storeGroup.position.set((col - 2) * 20, 5, (row - 1) * 20);
+
+            scene.add(storeGroup);
+        }
+
+        function createGiantScreen() {
+            const screenGeometry = new THREE.PlaneGeometry(40, 20);
+            const screenMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const screenMesh = new THREE.Mesh(screenGeometry, screenMaterial);
+            screenMesh.position.set(0, 20, -50);
+            scene.add(screenMesh);
+
+            // Add video texture (replace with actual video URL)
+            const video = document.createElement('video');
+            video.src = 'https://example.com/video.mp4';
+            video.loop = true;
+            video.muted = true;
+            video.play();
+            const videoTexture = new THREE.VideoTexture(video);
+            screenMesh.material.map = videoTexture;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            TWEEN.update();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Handle click events
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
+                const storeIndex = Math.floor((clickedObject.parent.position.x + 40) / 20) + 
+                                   Math.floor((clickedObject.parent.position.z + 20) / 20) * 5;
+                
+                if (storeIndex >= 0 && storeIndex < stores.length) {
+                    window.open(stores[storeIndex].url, '_blank');
+                }
+            }
+        });
+
+        // Add hover effect
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            
+            scene.traverse((object) => {
+                if (object instanceof THREE.Mesh && object.material.emissive) {
+                    object.material.emissive.setHex(0x000000);
+                }
+            });
+
+            if (intersects.length > 0) {
+                const hoveredObject = intersects[0].object;
+                if (hoveredObject.parent instanceof THREE.Group) {
+                    hoveredObject.parent.children.forEach((child) => {
+                        if (child instanceof THREE.Mesh && child.material.emissive) {
+                            child.material.emissive.setHex(0x555555);
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('your_publishable_key'); // Replace with your actual Stripe publishable key
+
+        document.getElementById('subscribeButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                });
+                const session = await response.json();
+                const result = await stripe.redirectToCheckout({
+                    sessionId: session.id
+                });
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
